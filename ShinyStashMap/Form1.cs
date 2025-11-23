@@ -25,7 +25,7 @@ public partial class Form1 : Form
     {
         var ShinyBlock = ((SAV9ZA)SAV.SAV).Accessor.GetBlock(0xF3A8569D).Data;
         int i = 0;
-        while (BitConverter.ToString(ShinyBlock[i..(i+8)].ToArray()) != "45262284E49CF2CB")
+        while (BitConverter.ToString(ShinyBlock[i..(i+8)].ToArray()) != "45262284E49CF2CB" && (i+0x1F0)<=ShinyBlock.Length)
         {
             ShinyEntities.Add((new PA9(ShinyBlock[(i+0x8)..(i+0x8 + 0x158)].ToArray()), ShinyBlock[i..(i + 8)].ToArray()));
             i += 0x1F0;
