@@ -58,8 +58,8 @@ public partial class Form1 : Form
         foreach (var pt in coords)
         {
             const int length = (10 * 2) + 1; // Diameter of the circle
-            x = (float)tr.ConvertX(pt.X) - (length / 2.0f);
-            y = (float)tr.ConvertZ(pt.Z) - (length / 2.0f);
+            x = (float)tr.ConvertX(pt.X) - (100 / 2.0f);
+            y = (float)tr.ConvertZ(pt.Z) - (100 / 2.0f);
             gr.FillEllipse(brush, x, y, 100, 100);
         }
     }
