@@ -2,6 +2,7 @@ using PKHeX.Core;
 using PKHeX.Drawing.PokeSprite;
 using ShinyStashMap.Properties;
 using System.ComponentModel;
+using System.Globalization;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -19,12 +20,14 @@ public partial class Form1 : Form
     public bool Connected = false;
     public List<(PA9, byte[])> ShinyEntities = [];
     public bot Bot = new();
+    public string resourceText = "";
+    public string[] Lines = [];
     public Form1(ISaveFileProvider sav)
     {
         SAV = sav;
         InitializeComponent();
-        var resourceText = Properties.Resources.t1_point_spawners;
-        var Lines = resourceText.Replace("\r", "").Split('\n');
+        resourceText = Properties.Resources.t1_point_spawners;
+        Lines = resourceText.Replace("\r", "").Split('\n');
         SpawnersLumiose = ParseToDictionary(Lines);
         resourceText = Properties.Resources.t2_point_spawners;
         Lines = resourceText.Replace("\r", "").Split('\n');
@@ -158,36 +161,40 @@ public partial class Form1 : Form
     }
     static Dictionary<string, (byte[], float[])> ParseToDictionary(IEnumerable<string> lines)
     {
-        var hashRe = new Regex(@"([A-Fa-f0-9]{16})");
-        var v3fRe = new Regex(@"V3f\((-?\d+\.?\d*),\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*)\)");
+        RegexOptions options = RegexOptions.CultureInvariant | RegexOptions.Compiled;
+
+        var hashRe = new Regex(@"([A-Fa-f0-9]{16})", options);
+
+        var v3fRe = new Regex(
+            @"V3f\((-?\d+(?:[.,]\d*)?),\s*(-?\d+(?:[.,]\d*)?),\s*(-?\d+(?:[.,]\d*)?)\)",
+            options
+        );
 
         var dict = new Dictionary<string, (byte[], float[])>();
 
         foreach (var line in lines)
         {
-            try
-            {
-                string hash = hashRe.Match(line).Groups[1].Value;
+           
+            string hash = hashRe.Match(line).Groups[1].Value;
 
-                var m = v3fRe.Match(line);
-                float x = float.Parse(m.Groups[1].Value);
-                float y = float.Parse(m.Groups[2].Value);
-                float z = float.Parse(m.Groups[3].Value);
+            var m = v3fRe.Match(line);
+            if (!m.Success) continue;
 
-                byte[] bytes = new byte[12];
-                Buffer.BlockCopy(BitConverter.GetBytes(x), 0, bytes, 0, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(y), 0, bytes, 4, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(z), 0, bytes, 8, 4);
+            float x = float.Parse(m.Groups[1].Value.Replace(',', '.'), CultureInfo.InvariantCulture);
+            float y = float.Parse(m.Groups[2].Value.Replace(',', '.'), CultureInfo.InvariantCulture);
+            float z = float.Parse(m.Groups[3].Value.Replace(',', '.'), CultureInfo.InvariantCulture);
 
-                dict[hash] = (bytes, new float[] { x, y, z });
-            }
-            catch
-            {
-                continue;
-            }
+            byte[] bytes = new byte[12];
+            Buffer.BlockCopy(BitConverter.GetBytes(x), 0, bytes, 0, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(y), 0, bytes, 4, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(z), 0, bytes, 8, 4);
+
+            dict[hash] = (bytes, new float[] { x, y, z });
+            
         }
         return dict;
     }
+
     public static readonly MapTransform TransformLumiose = new(
        Texture: new(4096.0, 4096.0),
        Range: new(3940.0, 3940.0),
